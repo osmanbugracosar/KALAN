@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
-import { Download, Upload, FileJson, FileSpreadsheet, ShieldCheck, AlertTriangle, FileDown } from 'lucide-react';
+import { Download, Upload, FileJson, FileSpreadsheet, ShieldCheck, AlertTriangle, FileDown, HardDriveDownload, FolderClock } from 'lucide-react';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useUIStore } from '../store/useUIStore';
 import { useSnapshot } from '../app/useSnapshot';
-import { todayLocalDate } from '../core/date';
+import { todayLocalDate, formatDateTimeTR } from '../core/date';
+import { BACKUP_DIR_LABEL } from '../db/fsBackup';
 import type { BackupFile, CsvImportRow } from '../store/useFinanceStore';
 import { parseDelimited, toImportRows } from '../services/csvImport';
 import { Card, CardHeader } from '../ui/Card';
@@ -29,6 +30,10 @@ export function BackupPage() {
   const buildBackup = useFinanceStore((st) => st.buildBackup);
   const restoreBackup = useFinanceStore((st) => st.restoreBackup);
   const importCsv = useFinanceStore((st) => st.importTransactionsCsv);
+  const backupToDisk = useFinanceStore((st) => st.backupToDisk);
+  const lastAuto = useFinanceStore((st) => st.settings.last_auto_backup);
+  const isDesktop = useFinanceStore((st) => st.mode === 'tauri');
+  const [diskBusy, setDiskBusy] = useState(false);
 
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +50,13 @@ export function BackupPage() {
     const backup = buildBackup();
     downloadText(`kalan-yedek-${todayLocalDate()}.json`, JSON.stringify(backup, null, 2), 'application/json');
     pushToast('success', 'Yedek dosyası indirildi.');
+  };
+
+  const doDiskBackup = async () => {
+    setDiskBusy(true);
+    const res = await backupToDisk();
+    setDiskBusy(false);
+    pushToast(res.ok ? 'success' : 'error', res.ok ? 'Belgeler klasörüne yedeklendi.' : res.message ?? 'Yedeklenemedi.');
   };
 
   /* ---- Geri yükle (JSON) ---- */
@@ -125,13 +137,28 @@ export function BackupPage() {
       {/* Yedekleme */}
       <Card>
         <CardHeader title="Yedekleme" subtitle="Tüm verinin tek dosyada kopyası" action={<ShieldCheck size={18} className="text-muted" />} />
+
+        {isDesktop && (
+          <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-income/25 bg-income/5 p-3">
+            <FolderClock size={17} className="text-income mt-0.5 shrink-0" />
+            <div className="text-[12.5px] leading-relaxed">
+              <span className="text-ink font-medium">Otomatik yedekleme açık.</span>{' '}
+              Uygulama her açılışta (günde bir kez) verini <span className="text-ink">{BACKUP_DIR_LABEL}</span> klasörüne kaydeder; son 10 yedek saklanır.
+              {lastAuto && <span className="text-muted"> Son otomatik yedek: {formatDateTimeTR(lastAuto)}.</span>}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-4 rounded-lg border border-line bg-elevate/50 p-3.5">
             <div>
               <div className="text-[14px] font-medium text-ink flex items-center gap-2"><FileJson size={15} /> Yedek al (.json)</div>
               <p className="text-[12.5px] text-muted mt-0.5">Hesaplar, işlemler, borçlar, birikimler, bütçeler ve düzenli ödemeler dahil her şey.</p>
             </div>
-            <Button onClick={doBackup}><Download size={15} /> İndir</Button>
+            <div className="flex items-center gap-2 shrink-0">
+              {isDesktop && <Button variant="secondary" onClick={doDiskBackup} disabled={diskBusy}><HardDriveDownload size={15} /> Belgeler'e</Button>}
+              <Button onClick={doBackup}><Download size={15} /> İndir</Button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-4 rounded-lg border border-warn/25 bg-warn/5 p-3.5">

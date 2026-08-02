@@ -11,6 +11,7 @@ import {
   daysInMonth,
   daysElapsedInMonth,
   daysBetween,
+  addMonthsToDate,
   isInMonth,
   monthsBack,
   isInRange,
@@ -23,6 +24,7 @@ import {
   availableBalance,
   debtProgressPercent,
   debtRemaining,
+  expenseByCategory,
   incomeExpenseByMonth,
   monthlyConsumptionExpense,
   monthlyDebtPaid,
@@ -305,6 +307,71 @@ export interface UpcomingItem {
   date: string;
   amount: Kurus;
   kind: 'recurring' | 'debt';
+}
+
+/* --------------------------- Akıllı içgörüler --------------------------- */
+export interface InsightSet {
+  mKey: string;
+  daysElapsed: number;
+  daysInMonth: number;
+  isCurrentMonth: boolean;
+  expenseThis: Kurus;
+  expenseLast: Kurus;
+  expenseDeltaPct: number | null;
+  incomeThis: Kurus;
+  incomeLast: Kurus;
+  incomeDeltaPct: number | null;
+  projectionK: Kurus;
+  upcomingFixedK: Kurus;
+  topIncrease: { name: string; deltaK: Kurus } | null;
+  noSpendDays: number;
+}
+
+/** Ay bazlı içgörüler: geçen aya karşılaştırma, ay sonu tahmini, gelen sabit giderler. */
+export function monthlyInsights(s: Snapshot, mKey = currentMonthKey()): InsightSet {
+  const eff = effective(s);
+  const cmap = categoryMap(s);
+  const today = todayLocalDate();
+  const prevKey = addMonthsToDate(`${mKey}-01`, -1).slice(0, 7);
+
+  const expenseThis = monthlyConsumptionExpense(eff, mKey);
+  const expenseLast = monthlyConsumptionExpense(eff, prevKey);
+  const incomeThis = monthlyRealIncome(eff, mKey);
+  const incomeLast = monthlyRealIncome(eff, prevKey);
+  const pct = (now: number, prev: number): number | null => (prev > 0 ? Math.round(((now - prev) / prev) * 100) : null);
+
+  const dim = daysInMonth(mKey);
+  const elapsed = daysElapsedInMonth(mKey, today);
+  const isCurrentMonth = mKey === currentMonthKey();
+  const projectionK = isCurrentMonth && elapsed > 0 ? Math.round((expenseThis / elapsed) * dim) : expenseThis;
+
+  // Bu ay içinde henüz gelmemiş sabit (düzenli) giderler
+  let upcomingFixedK = 0;
+  for (const r of s.recurring) {
+    if (r.is_active !== 1 || r.type !== 'expense') continue;
+    const due = dayKey(r.next_due_date);
+    if (isInMonth(due, mKey) && due >= today) upcomingFixedK += r.amount;
+  }
+
+  // Geçen aya göre en çok artan kategori
+  const thisByCat = expenseByCategory(eff, (t) => isInMonth(t.transaction_date, mKey));
+  const lastByCat = expenseByCategory(eff, (t) => isInMonth(t.transaction_date, prevKey));
+  let topIncrease: { name: string; deltaK: Kurus } | null = null;
+  for (const [cat, amt] of thisByCat) {
+    if (cat < 0) continue;
+    const delta = amt - (lastByCat.get(cat) ?? 0);
+    if (delta > 0 && (!topIncrease || delta > topIncrease.deltaK)) {
+      topIncrease = { name: cmap.get(cat)?.name ?? 'Kategori', deltaK: delta };
+    }
+  }
+
+  return {
+    mKey, daysElapsed: elapsed, daysInMonth: dim, isCurrentMonth,
+    expenseThis, expenseLast, expenseDeltaPct: pct(expenseThis, expenseLast),
+    incomeThis, incomeLast, incomeDeltaPct: pct(incomeThis, incomeLast),
+    projectionK, upcomingFixedK, topIncrease,
+    noSpendDays: noSpendDaysInMonth(eff, mKey),
+  };
 }
 
 /** Yaklaşan zorunlu ödemeler (düzenli ödemeler + borç son tarihleri). */

@@ -4,7 +4,7 @@ import type { Snapshot } from './selectors';
 import {
   overviewSummary, last6Series, categoryDistribution, debtOverMonths,
   upcomingPayments, effective, accountMap, categoryMap, healthScore,
-  debtViews, savingsViews, topMerchants, dailySpend, budgetViews, dueRecurring,
+  debtViews, savingsViews, topMerchants, dailySpend, budgetViews, dueRecurring, monthlyInsights,
 } from './selectors';
 import { currentMonthKey, daysInMonth } from '../core/date';
 
@@ -61,6 +61,15 @@ describe('smoke: selectors over demo data', () => {
     const due = dueRecurring(s);
     expect(Array.isArray(due)).toBe(true);
     for (const r of due) expect(r.is_active).toBe(1);
+  });
+  it('monthly insights run with bounded output', () => {
+    const ins = monthlyInsights(s, mKey);
+    expect(ins.expenseThis).toBeGreaterThanOrEqual(0);
+    expect(ins.incomeThis).toBeGreaterThanOrEqual(0);
+    expect(ins.projectionK).toBeGreaterThanOrEqual(0);
+    expect(ins.upcomingFixedK).toBeGreaterThanOrEqual(0);
+    expect(ins.noSpendDays).toBeGreaterThanOrEqual(0);
+    if (ins.topIncrease) expect(ins.topIncrease.deltaK).toBeGreaterThan(0);
   });
   it('healthScore in range', () => {
     const h = healthScore(s, mKey);

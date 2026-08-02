@@ -92,3 +92,31 @@ describe('CSV içe aktarma (store)', () => {
     expect(st.categories.some((c) => c.name === 'Ulaşım')).toBe(true);
   });
 });
+
+describe('işlem düzenleme ve silme', () => {
+  beforeEach(seed);
+
+  it('işlem tutarını günceller, bakiye yeniden hesaplanır', async () => {
+    await useFinanceStore.getState().addTransaction(expenseDraft(3000));
+    const id = useFinanceStore.getState().transactions[0].id;
+    // 100000 - 3000 = 97000
+    expect(computeBalances(useFinanceStore.getState().accounts, useFinanceStore.getState().transactions).get(1)).toBe(97000);
+
+    await useFinanceStore.getState().updateTransaction(id, { amount: 5000 });
+    // 100000 - 5000 = 95000
+    expect(computeBalances(useFinanceStore.getState().accounts, useFinanceStore.getState().transactions).get(1)).toBe(95000);
+  });
+
+  it('işlemi siler ve kalemlerini de kaldırır', async () => {
+    const items = [{ name: 'A', category_id: 10, quantity: 1, unit_price: 4000, total_amount: 4000, note: null }];
+    await useFinanceStore.getState().addDetailedExpense(expenseDraft(4000), items);
+    const id = useFinanceStore.getState().transactions[0].id;
+    expect(useFinanceStore.getState().transactionItems.length).toBe(1);
+
+    await useFinanceStore.getState().deleteTransaction(id);
+    expect(useFinanceStore.getState().transactions.length).toBe(0);
+    expect(useFinanceStore.getState().transactionItems.length).toBe(0);
+    // bakiye başa döner
+    expect(computeBalances(useFinanceStore.getState().accounts, useFinanceStore.getState().transactions).get(1)).toBe(100000);
+  });
+});

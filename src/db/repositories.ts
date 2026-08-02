@@ -110,6 +110,7 @@ export async function insertTransaction(t: Omit<Transaction, 'id' | 'created_at'
 export async function updateTransactionLink(id: number, linkedId: number): Promise<void> {
   await execute('UPDATE transactions SET linked_transaction_id = $1, updated_at = $2 WHERE id = $3', [linkedId, nowLocalIso(), id]);
 }
+export const updateTransaction = (id: number, patch: Partial<Transaction>) => patchRow('transactions', id, patch);
 export async function deleteTransaction(id: number): Promise<void> {
   await execute('DELETE FROM transaction_items WHERE transaction_id = $1', [id]);
   await execute('DELETE FROM transactions WHERE id = $1', [id]);

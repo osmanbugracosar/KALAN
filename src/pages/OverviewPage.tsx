@@ -10,6 +10,7 @@ import {
   accountMap,
   categoryMap,
   healthScore,
+  monthlyInsights,
 } from '../store/selectors';
 import { daysInMonth, formatDateTR, formatMonthYearTR } from '../core/date';
 import { Card, CardHeader } from '../ui/Card';
@@ -19,6 +20,7 @@ import { Button } from '../ui/Button';
 import { Progress, EmptyState, Badge } from '../ui/misc';
 import { IncomeExpenseChart, CategoryDonut } from '../ui/charts';
 import { TransactionList } from './parts/TransactionList';
+import { InsightsPanel } from './parts/InsightsPanel';
 import { formatMoney } from '../core/money';
 
 export function OverviewPage() {
@@ -33,6 +35,7 @@ export function OverviewPage() {
   const upcoming = upcomingPayments(snap, 5);
   const recent = effective(snap).slice(0, 6);
   const health = healthScore(snap, mKey);
+  const insights = monthlyInsights(snap, mKey);
   const amap = accountMap(snap);
   const cmap = categoryMap(snap);
 
@@ -74,6 +77,9 @@ export function OverviewPage() {
         <StatCard label="Birikim · bu ay" accent="savings" icon={<PiggyBank size={17} />} value={<Money value={sum.savings} tone="savings" />} />
         <StatCard label="Nakit akışı · bu ay" accent={sum.cashDelta >= 0 ? 'income' : 'expense'} value={<Money value={sum.cashDelta} signed tone={sum.cashDelta >= 0 ? 'income' : 'expense'} />} hint="Gelir − gider − borç ödemesi" />
       </div>
+
+      {/* Akıllı içgörüler */}
+      <InsightsPanel insights={insights} />
 
       {/* Grafikler */}
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">

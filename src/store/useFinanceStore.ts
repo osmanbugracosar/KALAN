@@ -27,6 +27,7 @@ import {
   type SetupPayload,
 } from '../db/persistence';
 import { generateDemoData } from '../db/demoData';
+import { writeBackupFile } from '../db/fsBackup';
 import { buildDefaultCategoryRows } from '../db/categoryFactory';
 import { validatePayment } from '../services/debt';
 import { debtRemaining } from '../services/calculations';
@@ -90,6 +91,8 @@ interface FinanceState {
   completeSetup: (payload: SetupPayload) => Promise<void>;
 
   addTransaction: (draft: TransactionDraft) => Promise<void>;
+  updateTransaction: (id: number, patch: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: number) => Promise<void>;
   addDetailedExpense: (draft: TransactionDraft, items: DetailedItemInput[]) => Promise<ActionResult>;
   addAccount: (draft: Omit<Account, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateAccount: (id: number, patch: Partial<Account>) => Promise<void>;
@@ -135,6 +138,8 @@ interface FinanceState {
   buildBackup: () => BackupFile;
   restoreBackup: (file: BackupFile) => Promise<ActionResult>;
   importTransactionsCsv: (rows: CsvImportRow[]) => Promise<ActionResult>;
+  runAutoBackupIfDue: () => Promise<void>;
+  backupToDisk: () => Promise<{ ok: boolean; path?: string; message?: string }>;
 }
 
 function localNextId(rows: { id: number }[]): number {
@@ -179,6 +184,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       }
       const bundle = await loadAllData();
       set({ status: 'ready', ...bundle });
+      void get().runAutoBackupIfDue();
     } catch (e) {
       set({ status: 'error', errorMessage: e instanceof Error ? e.message : String(e) });
     }
@@ -240,6 +246,19 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     else id = localNextId(rows);
     const now = nowLocalIso();
     set({ transactions: sortTxns([{ ...draft, id, created_at: now, updated_at: now }, ...rows]) });
+  },
+
+  updateTransaction: async (id, patch) => {
+    if (get().mode === 'tauri') await repo.updateTransaction(id, patch);
+    set({ transactions: sortTxns(get().transactions.map((t) => (t.id === id ? { ...t, ...patch, updated_at: nowLocalIso() } : t))) });
+  },
+
+  deleteTransaction: async (id) => {
+    if (get().mode === 'tauri') await repo.deleteTransaction(id);
+    set({
+      transactions: get().transactions.filter((t) => t.id !== id),
+      transactionItems: get().transactionItems.filter((it) => it.transaction_id !== id),
+    });
   },
 
   addDetailedExpense: async (draft, items) => {
@@ -727,6 +746,37 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       imported++;
     }
     return { ok: true, message: `${imported} işlem içe aktarıldı.` };
+  },
+
+  runAutoBackupIfDue: async () => {
+    if (get().mode !== 'tauri') return;
+    try {
+      const today = todayLocalDate();
+      const last = get().settings.last_auto_backup ?? '';
+      if (last.slice(0, 10) === today) return; // bugün zaten yedeklendi
+      const iso = nowLocalIso();
+      const path = await writeBackupFile(JSON.stringify(get().buildBackup()), iso);
+      if (path) {
+        await repo.setSetting('last_auto_backup', iso);
+        set({ settings: { ...get().settings, last_auto_backup: iso } });
+      }
+    } catch {
+      /* yedekleme açılışı engellemez */
+    }
+  },
+
+  backupToDisk: async () => {
+    if (get().mode !== 'tauri') return { ok: false, message: 'Diske yedekleme yalnızca kurulu uygulamada çalışır.' };
+    try {
+      const iso = nowLocalIso();
+      const path = await writeBackupFile(JSON.stringify(get().buildBackup()), iso);
+      if (!path) return { ok: false, message: 'Yedek dosyası yazılamadı.' };
+      await repo.setSetting('last_auto_backup', iso);
+      set({ settings: { ...get().settings, last_auto_backup: iso } });
+      return { ok: true, path };
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : 'Yedekleme başarısız.' };
+    }
   },
 }));
 

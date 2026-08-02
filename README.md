@@ -100,9 +100,13 @@ sıklık takvimi), Raporlar & İçgörüler (dönem özeti, kategori dağılım�
 çok harcanan yerler, CSV dışa aktarma, PDF/yazdır), PIN kilit ekranı.
 Toplam 88 birim + entegrasyon testi.
 
-**Sıradaki (yakında):** Giderler için kalem-kalem (fiş satırı) bölme arayüzü,
-tam yedekleme/geri yükleme ve banka ekstresinden içe aktarma. Veri modeli
-bunları şimdiden öngörür; ilgili iki sayfa "yakında" olarak işaretlidir.
+**Faz 3 (tamamlandı):** Otomatik yedekleme (her açılışta Belgeler klasörüne,
+son 10 yedek), akıllı içgörüler (aylık karşılaştırma, ay sonu tahmini,
+gelen sabit giderler, en çok artan kategori), işlem düzenleme/silme ve
+hesap filtresi. Toplam 102 birim + entegrasyon testi.
+
+**Sıradaki (isteğe bağlı):** çoklu para birimi, İngilizce dil desteği,
+fiş/fatura görseli ekleme, uygulama içi otomatik güncelleme.
 
 ---
 
