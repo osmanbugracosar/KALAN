@@ -1,0 +1,48 @@
+name: Windows kurulumu oluştur
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Kaynagi al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Rust kur
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust derleme onbellegi
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Paketleri kur
+        run: npm ci
+
+      - name: Testleri calistir
+        run: npm test
+
+      - name: Tip denetimi ve onyuz derlemesi
+        run: npm run build
+
+      - name: Masaustu uygulamasini derle
+        run: npm run tauri:build
+
+      - name: Kurulum dosyalarini yukle
+        uses: actions/upload-artifact@v4
+        with:
+          name: kalan-windows-kurulum
+          if-no-files-found: error
+          path: |
+            src-tauri/target/release/bundle/nsis/*-setup.exe
+            src-tauri/target/release/bundle/msi/*.msi
