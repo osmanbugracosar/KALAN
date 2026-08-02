@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Kalan tema token'ları (RGB üçlüleri — alfa desteği için)
+   ============================================================ */
+:root {
+  --k-base: 247 245 240;      /* kırık beyaz */
+  --k-surface: 255 255 255;
+  --k-elevate: 251 250 247;
+  --k-line: 231 227 218;
+  --k-ink: 22 35 58;          /* koyu lacivert */
+  --k-muted: 107 118 134;
+  --k-brand: 14 94 99;        /* koyu turkuaz */
+  --k-brand-soft: 221 237 237;
+  --k-income: 30 142 90;      /* yeşil */
+  --k-expense: 229 72 77;     /* mercan kırmızısı */
+  --k-debt: 217 130 43;       /* kehribar / turuncu */
+  --k-savings: 37 99 199;     /* mavi */
+  --k-warn: 220 38 38;        /* kırmızı */
+
+  color-scheme: light;
+}
+
+.dark {
+  --k-base: 14 22 33;
+  --k-surface: 22 32 46;
+  --k-elevate: 30 42 58;
+  --k-line: 42 54 70;
+  --k-ink: 231 236 243;
+  --k-muted: 147 160 180;
+  --k-brand: 42 167 173;
+  --k-brand-soft: 18 51 58;
+  --k-income: 52 199 123;
+  --k-expense: 242 109 114;
+  --k-debt: 232 162 76;
+  --k-savings: 91 141 239;
+  --k-warn: 242 109 114;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: rgb(var(--k-line));
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background-color: rgb(var(--k-base));
+    color: rgb(var(--k-ink));
+    font-family: "Segoe UI Variable", "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden; /* yatay taşmayı engelle; kaydırma iç panellerde */
+  }
+
+  /* Para/rakam gösterimlerinde tablo hizalı rakamlar */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--k-brand));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: rgb(var(--k-brand) / 0.18);
+  }
+}
+
+/* İnce kaydırma çubuğu */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--k-muted) / 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--k-muted) / 0.55);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Kalan çizgi imzası — aktif menü ve başlık vurgusu */
+.k-underline {
+  position: relative;
+}
+.k-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 2px;
+  width: 28px;
+  background: rgb(var(--k-brand));
+  border-radius: 2px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
