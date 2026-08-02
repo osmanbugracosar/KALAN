@@ -1,15 +1,29 @@
 name: Windows kurulumu oluştur
 
+# Bu iş akışı, Windows için Kalan kurulum dosyasını (.exe / .msi)
+# GitHub sunucularında otomatik derler. Böylece bilgisayarına Rust
+# kurmana gerek kalmadan hazır kurulumu indirebilirsin.
+#
+# Nasıl kullanılır:
+#   1) Bu projeyi GitHub'a bir depo (repository) olarak yükle.
+#   2) GitHub'da "Actions" sekmesine gir.
+#   3) Soldan "Windows kurulumu oluştur" > sağdan "Run workflow".
+#   4) Bittiğinde çalışmanın altındaki "Artifacts" bölümünden
+#      "kalan-windows-kurulum" dosyasını indir. İçinde setup.exe ve
+#      .msi bulunur.
+
 on:
   push:
     branches: [main, master]
+    tags: ['v*']
   workflow_dispatch: {}
 
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - name: Kaynagi al
+      - name: Kaynağı al
         uses: actions/checkout@v4
 
       - name: Node.js kur
@@ -21,7 +35,7 @@ jobs:
       - name: Rust kur
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Rust derleme onbellegi
+      - name: Rust derleme önbelleği
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -29,16 +43,16 @@ jobs:
       - name: Paketleri kur
         run: npm ci
 
-      - name: Testleri calistir
+      - name: Testleri çalıştır
         run: npm test
 
-      - name: Tip denetimi ve onyuz derlemesi
+      - name: Tip denetimi ve önyüz derlemesi
         run: npm run build
 
-      - name: Masaustu uygulamasini derle
+      - name: Masaüstü uygulamasını derle (.exe / .msi)
         run: npm run tauri:build
 
-      - name: Kurulum dosyalarini yukle
+      - name: Kurulum dosyalarını yükle
         uses: actions/upload-artifact@v4
         with:
           name: kalan-windows-kurulum
