@@ -1,0 +1,149 @@
+====================================================================
+  KALAN — Kurulum ve Çalıştırma Rehberi
+  "ne geldi, ne gitti, ne kaldı?"
+  Çevrimdışı kişisel finans uygulaması (Windows masaüstü)
+====================================================================
+
+Merhaba Osman,
+
+Bu bir MASAÜSTÜ uygulamasıdır — web sitesi değildir. Yani Hostinger'a
+zip yükleyerek çalışmaz. Bilgisayarda kurulup çalışan, Windows için bir
+kurulum dosyası (.exe) üreten bir programdır. Tüm verilerin senin
+bilgisayarında, hiçbir sunucuya gitmeden saklanır.
+
+Uygulama TAMAMEN HAZIR. Tüm bölümler çalışıyor:
+  • Genel Bakış (özet panel, sağlık puanı, grafikler)
+  • Hesaplarım  • İşlemler  • Giderlerim (fiş gibi kalem kalem)
+  • Borçlarım   • Birikim Hedefleri  • Bütçeler
+  • Düzenli Ödemeler (vadesi gelince tek tıkla kaydet)
+  • Raporlar (CSV ve PDF/yazdır)  • Yedekle & İçe Aktar  • Ayarlar (PIN)
+
+--------------------------------------------------------------------
+  HANGİ YOLU SEÇMELİYİM?
+--------------------------------------------------------------------
+
+  YOL A — HIZLI ÖNİZLEME (5 dk, hiçbir şey kurmadan)
+     Uygulamayı örnek verilerle tarayıcıda hemen görmek için.
+     (Bu modda yapılan değişiklikler KALICI DEĞİLDİR, sadece deneme.)
+
+  YOL B — GERÇEK KURULUM, GITHUB'SIZ  ⟵  "direkt kurmak" için önerilen
+     Kendi bilgisayarında .exe üretirsin. Tek seferlik 3 program
+     kurulur, sonra "derle.bat" dosyasına çift tıklaman yeter.
+
+  YOL C — GERÇEK KURULUM, GITHUB İLE (bilgisayara hiçbir araç kurmadan)
+     .exe'yi GitHub'ın sunucularında ürettirip hazır indirirsin.
+
+NOT: Çalışan bir .exe yalnızca bir Windows bilgisayarında üretilebilir.
+Bu yüzden ya senin bilgisayarın (Yol B) ya da GitHub'ın sunucusu
+(Yol C) son "derleme" adımını yapar. İkisi de sonuçta aynı .exe'yi verir.
+
+====================================================================
+  ÖNCE: Node.js  (A ve B için gerekli, C için gerekmez)
+====================================================================
+
+1) https://nodejs.org/  adresinden "LTS" sürümünü indir ve kur.
+2) Kurulumdan sonra bilgisayarı yeniden başlat (önerilir).
+
+====================================================================
+  YOL A — HIZLI ÖNİZLEME (tarayıcıda, kurulumsuz)
+====================================================================
+
+1) Bu zip'i bir klasöre çıkar (örn. Masaüstü\kalan).
+2) O klasörün içinde bir terminal aç:
+   - Klasörü aç, adres çubuğuna "cmd" yazıp Enter'a bas.
+3) Sırayla şu iki komutu yaz:
+     npm install
+     npm run dev
+4) "Local: http://localhost:5173/" yazınca tarayıcında o adresi aç.
+5) Kapatmak için terminalde Ctrl + C.
+
+====================================================================
+  YOL B — GERÇEK KURULUM (GITHUB'SIZ)  ⟵  önerilen
+====================================================================
+
+Bir defalık şu 3 programı kur:
+
+  1) Node.js           https://nodejs.org        (LTS)
+  2) Rust              https://rustup.rs
+        - Açılan siyah ekranda "1" yazıp Enter (varsayılan kurulum).
+  3) C++ Build Tools   "Visual Studio Build Tools"
+        - Şu adresten indir:
+          https://visualstudio.microsoft.com/visual-cpp-build-tools/
+        - Kurulumda "Desktop development with C++" kutusunu İŞARETLE.
+        - (WebView2 genelde Windows'ta zaten yüklüdür; değilse:
+           https://developer.microsoft.com/microsoft-edge/webview2/ )
+
+Bu 3'ünü kurduktan sonra bilgisayarı YENİDEN BAŞLAT.
+
+Sonra çok kolay:
+  • Zip'i çıkardığın klasörde "derle.bat" dosyasına ÇİFT TIKLA.
+  • Betik gerekli programları kontrol eder, paketleri kurar ve
+    uygulamayı derler. (İlk derleme 5-15 dk sürebilir, normaldir.)
+  • Bittiğinde kurulum klasörü kendiliğinden açılır.
+
+Kurulum dosyan burada olur:
+  src-tauri\target\release\bundle\nsis\Kalan_1.0.0_x64-setup.exe
+
+Bu .exe'ye çift tıkla, kur, bitti. Artık Başlat menüsünde "Kalan".
+
+(İstersen betik yerine elle de yapabilirsin: klasörde terminal açıp
+   npm install
+   npm run tauri:build
+komutlarını çalıştırmak aynı sonucu verir.)
+
+====================================================================
+  YOL C — GERÇEK KURULUM (GITHUB İLE, bilgisayara araç kurmadan)
+====================================================================
+
+1) github.com'da ücretsiz bir hesap aç.
+2) Yeni bir depo (repository) oluştur ("New repository").
+3) Bu klasördeki TÜM dosyaları o depoya yükle
+   ("uploading an existing file" ile sürükle-bırak yeterli).
+4) Depoda üstten "Actions" sekmesine gir.
+5) Soldaki "Windows kurulumu oluştur" akışını seç, sağdan
+   "Run workflow" düğmesine bas.
+6) ~10 dakika sonra tamamlanan çalışmaya tıkla, en alttaki
+   "Artifacts" bölümünden "kalan-windows-kurulum" dosyasını indir.
+   İçinden "Kalan_1.0.0_x64-setup.exe" çıkar → çift tıkla, kur.
+
+Bu yol, bilgisayarına Rust/derleme aracı kurmak istemiyorsan idealdir.
+
+====================================================================
+  KURULUMDAN SONRA — İLK AÇILIŞ
+====================================================================
+
+• Uygulama ilk açıldığında kısa bir kurulum sihirbazı gelir: adını,
+  hesaplarını ve (istersen) aylık harcama sınırını girersin.
+• "Örnek veriyle keşfet" dersen dolu bir demoyla başlarsın; sonra
+  Ayarlar > Veri yönetimi'nden sıfırlayabilirsin.
+• Güvenlik istersen: Ayarlar > Güvenlik'ten PIN oluştur. Bir sonraki
+  açılışta uygulama PIN sorar.
+• Verini yedeklemek için: "Yedekle & İçe Aktar" > "Yedek al (.json)".
+  Bu dosyayı saklarsan başka bir bilgisayarda geri yükleyebilirsin.
+
+====================================================================
+  SORUN GİDERME
+====================================================================
+
+• "cargo tanınmıyor" / Rust yok:
+    Rust kurulmamış veya bilgisayar yeniden başlatılmamış.
+    https://rustup.rs → kur → yeniden başlat.
+
+• Derleme "link.exe" / "cl.exe" / "MSVC" hatası veriyor:
+    C++ Build Tools eksik. "Visual Studio Build Tools" kur ve
+    "Desktop development with C++" kutusunu işaretle.
+
+• Uygulama açılıyor ama boş/beyaz görünüyor:
+    WebView2 eksik olabilir.
+    https://developer.microsoft.com/microsoft-edge/webview2/ → indir.
+
+• "npm install" internet hatası:
+    Bağlantını kontrol et, tekrar dene.
+
+• İlk derleme çok uzun sürüyor:
+    Normaldir (5-15 dk). Sonraki derlemeler çok daha hızlıdır.
+
+--------------------------------------------------------------------
+Herhangi bir adımda takılırsan bana yaz, ekran ekran ilerleriz.
+LineDesign · Kalan sürüm 1.0.0
+--------------------------------------------------------------------

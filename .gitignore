@@ -1,0 +1,21 @@
+# Bağımlılıklar
+node_modules/
+
+# Derleme çıktıları
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# Günlükler
+*.log
+npm-debug.log*
+
+# Ortam
+.env
+.env.local
+
+# Editör / OS
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
