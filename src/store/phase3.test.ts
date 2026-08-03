@@ -120,3 +120,26 @@ describe('işlem düzenleme ve silme', () => {
     expect(computeBalances(useFinanceStore.getState().accounts, useFinanceStore.getState().transactions).get(1)).toBe(100000);
   });
 });
+
+describe('bakiye düzeltme (adjustment)', () => {
+  beforeEach(seed);
+
+  const adjust = (delta: number): TransactionDraft => ({
+    type: 'adjustment', amount: delta, account_id: 1, destination_account_id: null, category_id: null,
+    debt_id: null, savings_goal_id: null, merchant: null, description: 'Bakiye düzeltmesi', payment_method: null,
+    transaction_date: '2026-01-20T12:00:00', note: null, include_in_budget: 0, has_receipt: 0,
+    linked_transaction_id: null, is_recurring_instance: 0,
+  });
+
+  it('pozitif düzeltme bakiyeyi artırır', async () => {
+    // başlangıç 100000, hedef 150000 -> delta +50000
+    await useFinanceStore.getState().addTransaction(adjust(50000));
+    expect(computeBalances(useFinanceStore.getState().accounts, useFinanceStore.getState().transactions).get(1)).toBe(150000);
+  });
+
+  it('negatif düzeltme bakiyeyi azaltır', async () => {
+    // başlangıç 100000, hedef 70000 -> delta -30000
+    await useFinanceStore.getState().addTransaction(adjust(-30000));
+    expect(computeBalances(useFinanceStore.getState().accounts, useFinanceStore.getState().transactions).get(1)).toBe(70000);
+  });
+});

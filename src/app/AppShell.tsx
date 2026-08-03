@@ -2,6 +2,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { TransactionModal } from './TransactionModal';
 import { useUIStore } from '../store/useUIStore';
+import { ErrorBoundary } from './ErrorBoundary';
 import { Toasts } from '../ui/Toasts';
 import { OverviewPage } from '../pages/OverviewPage';
 import { AccountsPage } from '../pages/AccountsPage';
@@ -25,7 +26,9 @@ export function AppShell() {
         <TopBar />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1240px] mx-auto p-5">
-            <PageRouter page={page} />
+            <ErrorBoundary key={page}>
+              <PageRouter page={page} />
+            </ErrorBoundary>
           </div>
         </main>
       </div>

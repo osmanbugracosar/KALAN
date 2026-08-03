@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wallet, Landmark, CreditCard, PiggyBank, Smartphone, Circle, Plus, Pencil, ShieldCheck } from 'lucide-react';
+import { Wallet, Landmark, CreditCard, PiggyBank, Smartphone, Circle, Plus, Pencil, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useUIStore } from '../store/useUIStore';
 import { useSnapshot } from '../app/useSnapshot';
@@ -8,6 +8,7 @@ import { computeBalances, totalBalance } from '../services/calculations';
 import { ACCOUNT_TYPE_LABELS, AccountType } from '../domain/enums';
 import type { Account } from '../domain/types';
 import { parseAmountToKurus } from '../core/money';
+import { nowLocalIso } from '../core/date';
 import { Card } from '../ui/Card';
 import { StatCard } from '../ui/StatCard';
 import { Money } from '../ui/Money';
@@ -30,7 +31,7 @@ const ACCOUNT_PALETTE = ['#0E5E63', '#2563C7', '#1E8E5A', '#D9822B', '#7C3AED', 
 export function AccountsPage() {
   const snap = useSnapshot();
   const accounts = useFinanceStore((s) => s.accounts);
-  const [modal, setModal] = useState<{ mode: 'add' } | { mode: 'edit'; account: Account } | null>(null);
+  const [modal, setModal] = useState<{ mode: 'add' } | { mode: 'edit'; account: Account } | { mode: 'adjust'; account: Account; current: number } | null>(null);
 
   const eff = effective(snap);
   const balances = computeBalances(accounts, eff);
@@ -76,9 +77,15 @@ export function AccountsPage() {
                   </div>
                   <div className="text-right">
                     <Money value={bal} tone={bal < 0 ? 'expense' : 'default'} className="text-[15px] font-semibold" />
-                    <button onClick={() => setModal({ mode: 'edit', account: a })} className="block ml-auto mt-1 text-[12px] text-muted hover:text-brand inline-flex items-center gap-1 transition-colors">
-                      <Pencil size={12} /> Düzenle
-                    </button>
+                    <div className="flex items-center gap-2 justify-end mt-1">
+                      <button onClick={() => setModal({ mode: 'adjust', account: a, current: bal })} className="text-[12px] text-muted hover:text-brand inline-flex items-center gap-1 transition-colors" title="Bakiyeyi elle düzelt">
+                        <SlidersHorizontal size={12} /> Düzelt
+                      </button>
+                      <span className="text-line">·</span>
+                      <button onClick={() => setModal({ mode: 'edit', account: a })} className="text-[12px] text-muted hover:text-brand inline-flex items-center gap-1 transition-colors">
+                        <Pencil size={12} /> Düzenle
+                      </button>
+                    </div>
                   </div>
                 </li>
               );
@@ -87,8 +94,80 @@ export function AccountsPage() {
         )}
       </Card>
 
-      {modal && <AccountModal state={modal} onClose={() => setModal(null)} />}
+      {modal && modal.mode === 'adjust' && <AdjustBalanceModal account={modal.account} current={modal.current} onClose={() => setModal(null)} />}
+      {modal && modal.mode !== 'adjust' && <AccountModal state={modal} onClose={() => setModal(null)} />}
     </div>
+  );
+}
+
+function AdjustBalanceModal({ account, current, onClose }: { account: Account; current: number; onClose: () => void }) {
+  const addTransaction = useFinanceStore((s) => s.addTransaction);
+  const pushToast = useUIStore((s) => s.pushToast);
+  const [target, setTarget] = useState(centsToInput(current));
+  const [busy, setBusy] = useState(false);
+
+  const targetK = parseAmountToKurus(target);
+  const delta = targetK != null ? targetK - current : 0;
+
+  const submit = async () => {
+    if (targetK == null) {
+      pushToast('error', 'Geçerli bir tutar girin.');
+      return;
+    }
+    if (delta === 0) {
+      pushToast('info', 'Bakiye zaten bu değerde.');
+      onClose();
+      return;
+    }
+    setBusy(true);
+    await addTransaction({
+      type: 'adjustment',
+      amount: delta, // işaretli: hedef - mevcut
+      account_id: account.id,
+      destination_account_id: null,
+      category_id: null,
+      debt_id: null,
+      savings_goal_id: null,
+      merchant: null,
+      description: 'Bakiye düzeltmesi',
+      payment_method: null,
+      transaction_date: nowLocalIso(),
+      note: null,
+      include_in_budget: 0,
+      has_receipt: 0,
+      linked_transaction_id: null,
+      is_recurring_instance: 0,
+    });
+    setBusy(false);
+    pushToast('success', 'Bakiye güncellendi.');
+    onClose();
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Bakiyeyi düzelt"
+      subtitle={account.name}
+      size="sm"
+      footer={<><Button variant="ghost" onClick={onClose} disabled={busy}>Vazgeç</Button><Button onClick={submit} disabled={busy}>Kaydet</Button></>}
+    >
+      <div className="space-y-4">
+        <div className="flex items-center justify-between rounded-lg border border-line bg-elevate/50 px-3.5 py-2.5">
+          <span className="text-[13px] text-muted">Şu anki bakiye</span>
+          <Money value={current} tone={current < 0 ? 'expense' : 'default'} className="font-semibold" />
+        </div>
+        <Field label="Gerçek bakiye ne olmalı?" hint="Doğru tutarı yaz; uygulama farkı otomatik düzeltme olarak ekler">
+          <MoneyInput value={target} onChange={(e) => setTarget(e.target.value)} autoFocus />
+        </Field>
+        {targetK != null && delta !== 0 && (
+          <div className="text-[13px] text-muted">
+            Düzeltme: <Money value={delta} signed tone={delta >= 0 ? 'income' : 'expense'} className="font-medium" /> {delta >= 0 ? '(bakiye artacak)' : '(bakiye azalacak)'}
+          </div>
+        )}
+        <p className="text-[12px] text-muted">Bu işlem gelir ya da gider sayılmaz; yalnızca hesabın bakiyesini gerçek tutara eşitler.</p>
+      </div>
+    </Modal>
   );
 }
 
