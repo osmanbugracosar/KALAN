@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Landmark, Plus, ChevronDown, Pencil, Trash2, HandCoins, CheckCircle2 } from 'lucide-react';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useUIStore } from '../store/useUIStore';
@@ -70,7 +70,8 @@ export function DebtsPage() {
 
 function DebtCard({ view }: { view: DebtView }) {
   const { debt, remaining, paidTotal, progress, status } = view;
-  const payments = useFinanceStore((s) => s.debtPayments.filter((p) => p.debt_id === debt.id));
+  const allPayments = useFinanceStore((s) => s.debtPayments);
+  const payments = useMemo(() => allPayments.filter((p) => p.debt_id === debt.id), [allPayments, debt.id]);
   const deleteDebt = useFinanceStore((s) => s.deleteDebt);
   const pushToast = useUIStore((s) => s.pushToast);
   const [open, setOpen] = useState(false);
@@ -196,12 +197,13 @@ function PaymentModal({ debt, payment, onClose }: { debt: Debt; payment?: DebtPa
   const addDebtPayment = useFinanceStore((s) => s.addDebtPayment);
   const editDebtPayment = useFinanceStore((s) => s.editDebtPayment);
   const deleteDebtPayment = useFinanceStore((s) => s.deleteDebtPayment);
-  const remaining = useFinanceStore((s) => {
-    // kalan borç (bu ödeme hariç değil; bilgi amaçlı)
-    const ps = s.debtPayments.filter((p) => p.debt_id === debt.id);
+  const pmPayments = useFinanceStore((s) => s.debtPayments);
+  const remaining = useMemo(() => {
+    // kalan borç (bilgi amaçlı)
+    const ps = pmPayments.filter((p) => p.debt_id === debt.id);
     const paid = debt.previously_paid_amount + ps.reduce((x, p) => x + p.amount, 0);
     return Math.max(0, debt.total_repayment_amount - paid);
-  });
+  }, [pmPayments, debt.id, debt.previously_paid_amount, debt.total_repayment_amount]);
   const pushToast = useUIStore((s) => s.pushToast);
 
   const editing = payment ?? null;
